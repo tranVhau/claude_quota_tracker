@@ -33,5 +33,10 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Claude Code local (machine-specific) settings
-.claude/settings.local.json
+# Claude Code (all local tooling/config — not part of the app)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.claude.json
+.claude.json.backup
+.mcp.json
