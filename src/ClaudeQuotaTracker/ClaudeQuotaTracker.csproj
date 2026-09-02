@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ClaudeQuotaTracker</AssemblyName>
+    <RootNamespace>ClaudeQuotaTracker</RootNamespace>
+    <!-- Tray-only app: no console window, but keep debug output visible in Debug builds -->
+    <StartupObject>ClaudeQuotaTracker.App</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Bridge script ships next to the .exe so SettingsWindow can reference an absolute path -->
+    <None Include="..\..\bridge\statusline-bridge.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>bridge\statusline-bridge.ps1</Link>
+    </None>
+  </ItemGroup>
+
+</Project>

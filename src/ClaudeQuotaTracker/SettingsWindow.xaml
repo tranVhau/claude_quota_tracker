@@ -1,0 +1,56 @@
+<Window x:Class="ClaudeQuotaTracker.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings"
+        Width="360"
+        SizeToContent="Height"
+        Background="#242424"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <StackPanel Margin="16">
+        <TabControl Background="Transparent" BorderThickness="0">
+
+            <TabItem Header="General">
+                <StackPanel Margin="0,10,0,0">
+                    <TextBlock Text="Refresh interval" Foreground="#9A9A9A" FontSize="11.5" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="IntervalCombo" Margin="0,0,0,10">
+                        <ComboBoxItem Content="1 min" Tag="60"/>
+                        <ComboBoxItem Content="5 min" Tag="300"/>
+                        <ComboBoxItem Content="30 min" Tag="1800"/>
+                        <ComboBoxItem Content="2 hr" Tag="7200"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Icon shows" Foreground="#9A9A9A" FontSize="11.5" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="MetricCombo" Margin="0,0,0,10">
+                        <ComboBoxItem Content="Higher of the two"/>
+                        <ComboBoxItem Content="Session (5h)"/>
+                        <ComboBoxItem Content="Week (7d)"/>
+                    </ComboBox>
+
+                    <CheckBox x:Name="AutoStartCheck" Content="Start with Windows" Foreground="White"/>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Advanced">
+                <StackPanel Margin="0,10,0,0">
+                    <TextBlock Text="Snapshot file" Foreground="#9A9A9A" FontSize="11.5" Margin="0,0,0,4"/>
+                    <TextBox x:Name="SnapshotPathBox" IsReadOnly="True" Margin="0,0,0,10"/>
+
+                    <TextBlock x:Name="ConnStatusText" Foreground="#8A8A8A" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Test connection" Click="TestConnection_Click" Margin="0,0,8,0"/>
+                        <Button Content="Register statusLine" Click="RegisterStatusLine_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Triggers">
+                <StackPanel x:Name="ShiftsPanel" Margin="0,10,0,0"/>
+            </TabItem>
+
+        </TabControl>
+
+        <Button Content="Save" Click="Save_Click" Margin="0,16,0,0" Height="30"/>
+    </StackPanel>
+</Window>

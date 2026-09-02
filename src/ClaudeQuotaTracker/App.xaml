@@ -1,0 +1,12 @@
+<Application x:Class="ClaudeQuotaTracker.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <!--
+        ShutdownMode="OnExplicitShutdown" is required for a tray-only app:
+        by default WPF exits the process once the last Window closes, but this
+        app never opens a main Window at startup, so the default would exit
+        immediately. The app now only shuts down when "Quit" calls
+        Application.Current.Shutdown().
+    -->
+</Application>
