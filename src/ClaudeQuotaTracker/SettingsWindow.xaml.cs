@@ -1,6 +1,4 @@
-using System.IO;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -8,7 +6,8 @@ using System.Windows.Media;
 // WinForms is enabled project-wide (for the tray NotifyIcon), so these control
 // and brush names collide with System.Windows.Forms / System.Drawing. Pin them
 // to the WPF side for this window.
-using Brushes = System.Windows.Media.Brushes;
+using Application = System.Windows.Application;
+using Brush = System.Windows.Media.Brush;
 using Button = System.Windows.Controls.Button;
 using GroupBox = System.Windows.Controls.GroupBox;
 using Orientation = System.Windows.Controls.Orientation;
@@ -21,10 +20,17 @@ public partial class SettingsWindow : Window
 {
     private readonly AppSettings _settings;
 
+    /// Shift names present when the window opened. A shift's scheduled task is
+    /// keyed by its name, so Save needs this to tell which Task Scheduler
+    /// entries belong to shifts the user has since removed.
+    private readonly List<string> _initialShiftNames;
+
     public SettingsWindow(AppSettings settings)
     {
         InitializeComponent();
+        DarkTitleBar.Apply(this);
         _settings = settings;
+        _initialShiftNames = settings.Shifts.Select(s => s.Name).ToList();
 
         foreach (ComboBoxItem item in IntervalCombo.Items)
             if (item.Tag?.ToString() == _settings.RefreshIntervalSeconds.ToString())
@@ -33,21 +39,32 @@ public partial class SettingsWindow : Window
         MetricCombo.SelectedIndex = (int)_settings.Metric;
         AutoStartCheck.IsChecked = _settings.AutoStartEnabled;
 
-        SnapshotPathBox.Text = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ClaudeQuotaTracker", "snapshot.json");
-
         BuildShiftRows();
     }
+
+    /// Pulls a palette brush out of Theme.xaml so rows built here match the
+    /// ones declared in XAML instead of drifting to hard-coded named colors.
+    private static Brush Themed(string key) =>
+        (Brush)Application.Current.Resources[key];
 
     private void BuildShiftRows()
     {
         ShiftsPanel.Children.Clear();
 
+        if (_settings.Shifts.Count == 0)
+        {
+            ShiftsPanel.Children.Add(new TextBlock
+            {
+                Text = "No shifts. Add one to schedule a pre-trigger.",
+                Foreground = Themed("ThemeTextSecondary"), FontSize = 11.5,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
+        }
+
         foreach (var shift in _settings.Shifts)
         {
-            var box = new GroupBox { Header = shift.Name, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 8) };
-            var stack = new StackPanel { Margin = new Thickness(6) };
+            var box = new GroupBox { Header = BuildShiftHeader(shift), Margin = new Thickness(0, 0, 0, 8) };
+            var stack = new StackPanel();
 
             var timeRow = new StackPanel { Orientation = Orientation.Horizontal };
             var startBox = new TextBox { Text = shift.Start.ToString(@"hh\:mm"), Width = 60 };
@@ -55,12 +72,16 @@ public partial class SettingsWindow : Window
             timeRow.Children.Add(startBox);
             timeRow.Children.Add(new TextBlock
             {
-                Text = " to ", Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center
+                Text = "to", Foreground = Themed("ThemeTextSecondary"),
+                Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center
             });
             timeRow.Children.Add(endBox);
             stack.Children.Add(timeRow);
 
-            var resultText = new TextBlock { Foreground = Brushes.LightBlue, FontSize = 12, Margin = new Thickness(0, 6, 0, 0) };
+            var resultText = new TextBlock
+            {
+                Foreground = Themed("ThemeAccent"), FontSize = 11.5, Margin = new Thickness(0, 8, 0, 0)
+            };
             RenderResult(resultText, shift.Start, shift.End);
             stack.Children.Add(resultText);
 
@@ -78,8 +99,8 @@ public partial class SettingsWindow : Window
 
             var autoCheck = new CheckBox
             {
-                Content = "Auto-trigger", Foreground = Brushes.White,
-                IsChecked = shift.AutoTriggerEnabled, Margin = new Thickness(0, 6, 0, 0)
+                Content = "Auto-trigger",
+                IsChecked = shift.AutoTriggerEnabled, Margin = new Thickness(0, 10, 0, 0)
             };
             autoCheck.Checked += (_, _) => shift.AutoTriggerEnabled = true;
             autoCheck.Unchecked += (_, _) => shift.AutoTriggerEnabled = false;
@@ -89,18 +110,79 @@ public partial class SettingsWindow : Window
             ShiftsPanel.Children.Add(box);
         }
 
-        var addButton = new Button { Content = "+ Add shift", Margin = new Thickness(0, 4, 0, 0) };
+        var addButton = new Button
+        {
+            Content = "+ Add shift",
+            Margin = new Thickness(0, 4, 0, 0),
+            // Qualified: the simple name binds to this window's own
+            // HorizontalAlignment property inside an instance method.
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Left
+        };
         addButton.Click += (_, _) =>
         {
             _settings.Shifts.Add(new ShiftConfig
             {
-                Name = $"Shift {_settings.Shifts.Count + 1}",
+                Name = NextShiftName(),
                 Start = new TimeSpan(9, 0, 0),
                 End = new TimeSpan(17, 0, 0)
             });
             BuildShiftRows();
         };
         ShiftsPanel.Children.Add(addButton);
+    }
+
+    /// <summary>
+    /// Builds a shift's GroupBox header: the name, and a remove button pushed
+    /// to the right edge. Removal only touches the in-memory list — nothing is
+    /// written and no scheduled task is touched until Save, so closing the
+    /// window instead is the way to back out of an accidental click.
+    /// </summary>
+    private UIElement BuildShiftHeader(ShiftConfig shift)
+    {
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        header.Children.Add(new TextBlock
+        {
+            Text = shift.Name,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        var remove = new Button
+        {
+            Content = "✕",
+            Style = (Style)Application.Current.Resources["IconDangerButton"],
+            ToolTip = $"Remove {shift.Name}"
+        };
+        remove.Click += (_, _) =>
+        {
+            _settings.Shifts.Remove(shift);
+            BuildShiftRows();
+        };
+        Grid.SetColumn(remove, 1);
+        header.Children.Add(remove);
+
+        return header;
+    }
+
+    /// <summary>
+    /// First unused "Shift N" name. Scheduled tasks are keyed by shift name,
+    /// so duplicates would collide on a single Task Scheduler entry — and
+    /// numbering from the list count is not enough once shifts can be removed
+    /// (delete "Shift 1" of two, and the next add would reuse "Shift 2").
+    /// </summary>
+    private string NextShiftName()
+    {
+        var taken = _settings.Shifts
+            .Select(s => s.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 1; ; i++)
+        {
+            string name = $"Shift {i}";
+            if (!taken.Contains(name)) return name;
+        }
     }
 
     private static void RenderResult(TextBlock target, TimeSpan start, TimeSpan end)
@@ -111,59 +193,6 @@ public partial class SettingsWindow : Window
             : $"Trigger at {trigger:hh\\:mm} \u00b7 {sessions} sessions";
     }
 
-    private void TestConnection_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var info = new FileInfo(SnapshotPathBox.Text);
-            ConnStatusText.Text = info.Exists
-                ? $"Last snapshot: {(int)(DateTime.UtcNow - info.LastWriteTimeUtc).TotalMinutes} min ago"
-                : "No snapshot found yet \u2014 open Claude Code once to generate one.";
-        }
-        catch (Exception ex)
-        {
-            ConnStatusText.Text = $"Couldn't read snapshot: {ex.Message}";
-        }
-    }
-
-    private void RegisterStatusLine_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            string claudeSettingsPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
-
-            JsonObject root = new();
-            if (File.Exists(claudeSettingsPath))
-            {
-                var parsed = JsonNode.Parse(File.ReadAllText(claudeSettingsPath)) as JsonObject;
-                root = parsed ?? new JsonObject();
-                // Back up before touching a file we don't own the rest of.
-                File.Copy(claudeSettingsPath, claudeSettingsPath + ".bak", overwrite: true);
-            }
-
-            string bridgePath = Path.Combine(AppContext.BaseDirectory, "bridge", "statusline-bridge.ps1");
-            string command = $"powershell -NoProfile -ExecutionPolicy Bypass -File \"{bridgePath}\"";
-
-            root["statusLine"] = new JsonObject
-            {
-                ["type"] = "command",
-                ["command"] = command,
-                ["refreshInterval"] = _settings.RefreshIntervalSeconds
-            };
-
-            Directory.CreateDirectory(Path.GetDirectoryName(claudeSettingsPath)!);
-            File.WriteAllText(claudeSettingsPath,
-                root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-
-            ConnStatusText.Text = "statusLine registered. Restart any open Claude Code session to apply.";
-        }
-        catch (Exception ex)
-        {
-            ConnStatusText.Text = $"Couldn't update settings.json: {ex.Message}";
-        }
-    }
-
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         _settings.RefreshIntervalSeconds = int.Parse(((ComboBoxItem)IntervalCombo.SelectedItem).Tag!.ToString()!);
@@ -172,6 +201,15 @@ public partial class SettingsWindow : Window
         _settings.Save();
 
         AutoStartManager.SetEnabled(_settings.AutoStartEnabled);
+
+        // Drop the Task Scheduler entries of shifts removed in this session
+        // first. Their tasks are named after the shift, so skipping this would
+        // leave an orphan firing `claude -p "."` daily with nothing in the app
+        // referring to it any more.
+        foreach (string name in _initialShiftNames)
+            if (!_settings.Shifts.Any(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)))
+                TriggerScheduler.RemoveTask(name);
+
         foreach (var shift in _settings.Shifts)
             TriggerScheduler.RegisterTask(shift, "claude");
 

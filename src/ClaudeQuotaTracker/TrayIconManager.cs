@@ -81,6 +81,16 @@ public sealed class TrayIconManager : IDisposable
         var menu = new ContextMenuStrip();
 
         menu.Items.Add(_lastUpdatedItem);
+
+        // Re-reads snapshot.json and repaints from it. That is all a refresh
+        // can do: the numbers only ever change when Claude Code runs its
+        // statusLine command and the bridge script rewrites the file, so
+        // nothing here can pull fresher data. It is still worth having —
+        // FileSystemWatcher does miss events, and this is the manual recovery.
+        var refresh = new ToolStripMenuItem("Refresh");
+        refresh.Click += (_, _) => _snapshotStore.ReloadNow();
+        menu.Items.Add(refresh);
+
         menu.Items.Add(new ToolStripSeparator());
 
         foreach (var (label, seconds) in new (string Label, int Seconds)[]
@@ -99,10 +109,6 @@ public sealed class TrayIconManager : IDisposable
         menu.Items.Add(_intervalMenu);
 
         menu.Items.Add(new ToolStripSeparator());
-
-        var reload = new ToolStripMenuItem("Reload from cache");
-        reload.Click += (_, _) => _snapshotStore.ReloadNow();
-        menu.Items.Add(reload);
 
         var settingsItem = new ToolStripMenuItem("Settings\u2026");
         settingsItem.Click += (_, _) => new SettingsWindow(_settings).Show();

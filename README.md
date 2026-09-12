@@ -22,9 +22,7 @@ Hoặc mở `ClaudeQuotaTracker.sln` bằng Visual Studio 2022 và nhấn F5.
 
 ## Kết nối với Claude Code (đăng ký statusLine)
 
-Cách 1 — **trong app**: mở Settings → tab Advanced → "Register statusLine". App sẽ tự ghi (và backup file cũ) vào `~/.claude/settings.json`.
-
-Cách 2 — **thủ công**: thêm vào `~/.claude/settings.json`:
+Thêm vào `~/.claude/settings.json`:
 
 ```json
 {
@@ -67,15 +65,18 @@ ClaudeQuotaTracker/
 │  ├─ TriggerScheduler.cs        công thức tính giờ trigger tối ưu + gọi schtasks.exe
 │  ├─ AutoStartManager.cs        registry Run key
 │  ├─ PopupWindow.xaml(.cs)      popup click trái
-│  └─ SettingsWindow.xaml(.cs)   dialog Settings (General/Advanced/Triggers)
+│  ├─ SettingsWindow.xaml(.cs)   dialog Settings (General/Triggers)
+│  ├─ Theme.xaml                 dark theme dùng chung (implicit style cho control WPF)
+│  ├─ DarkTitleBar.cs            bật dark caption bar qua DwmSetWindowAttribute
+│  └─ QuotaPalette.cs            màu + ngưỡng severity, dùng chung tray icon và popup
 └─ bridge/
    └─ statusline-bridge.ps1      script đăng ký làm statusLine của Claude Code
 ```
 
 ## Việc còn để ngỏ (TODO)
 
-- `TriggerScheduler.RunSchtasks` hiện nuốt lỗi im lặng — nên hiển thị lỗi thật (ExitCode/stderr) lên tab Advanced thay vì chỉ log.
-- `IconRenderer` chỉ vẽ 1 kích thước 32×32 — Windows sẽ tự scale, nhưng vẽ thêm bản 16×16 sẽ nét hơn ở taskbar mặc định.
+- `TriggerScheduler.RunSchtasks` hiện nuốt lỗi im lặng — nên hiển thị lỗi thật (ExitCode/stderr) ở đâu đó trong UI thay vì chỉ log.
+- `IconRenderer` render theo `SystemInformation.SmallIconSize` với sàn 32px — ở scaling 100% Windows vẫn downscale về 16px, vẽ riêng bản 16×16 sẽ nét hơn.
 - `PopupWindow.OpenClaudeCode_Click` giả định có Windows Terminal (`wt.exe`); đã có fallback PowerShell thường nhưng chưa test đường dẫn nào phổ biến hơn trên máy thật.
 - Chưa có unit test cho `TriggerScheduler.Calculate` — nên thêm test cho case `S mod 5 == 0` và ca qua đêm trước khi tin tưởng hoàn toàn.
 - Đóng gói installer (MSI/NSIS) chưa làm — hiện chỉ có hướng dẫn `dotnet build`.

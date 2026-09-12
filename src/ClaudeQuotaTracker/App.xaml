@@ -9,4 +9,12 @@
         immediately. The app now only shuts down when "Quit" calls
         Application.Current.Shutdown().
     -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Dark control styles; see Theme.xaml for why they are needed. -->
+                <ResourceDictionary Source="Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 </Application>

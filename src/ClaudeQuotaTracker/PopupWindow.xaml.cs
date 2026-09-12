@@ -1,13 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Threading;
-
-// Both WPF (System.Windows.Media) and WinForms/System.Drawing are imported
-// project-wide via ImplicitUsings + UseWindowsForms, so these names would be
-// ambiguous without a per-file alias pinning them to the WPF side.
-using Brush = System.Windows.Media.Brush;
-using Color = System.Windows.Media.Color;
 
 namespace ClaudeQuotaTracker;
 
@@ -56,21 +49,14 @@ public partial class PopupWindow : Window
 
         SessionBar.Width = Math.Clamp(session, 0, 100) / 100.0 * TrackWidth;
         WeekBar.Width = Math.Clamp(week, 0, 100) / 100.0 * TrackWidth;
-        SessionBar.Background = ColorFor(session);
-        WeekBar.Background = ColorFor(week);
+        SessionBar.Background = QuotaPalette.BrushFor(session);
+        WeekBar.Background = QuotaPalette.BrushFor(week);
 
         SessionReset.Text = FormatCountdown(data?.FiveHour?.ResetsAt);
         WeekReset.Text = FormatCountdown(data?.SevenDay?.ResetsAt);
 
         UpdatedLabel.Text = data is null ? "No data yet" : $"Updated {FormatAgo(data.UpdatedAt)}";
     }
-
-    private static Brush ColorFor(double percentage) => percentage switch
-    {
-        >= 90 => new SolidColorBrush(Color.FromRgb(0xE2, 0x4B, 0x4A)),
-        >= 70 => new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)),
-        _ => new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E))
-    };
 
     private static string FormatCountdown(DateTimeOffset? resetsAt)
     {

@@ -8,27 +8,34 @@
         Topmost="True"
         SizeToContent="Height"
         Width="240"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display"
         Deactivated="Window_Deactivated">
-    <Border Background="#2C2C2C" CornerRadius="8" BorderBrush="#22FFFFFF" BorderThickness="1" Padding="12">
+    <Border Background="{StaticResource ThemeSurface}" CornerRadius="8"
+            BorderBrush="{StaticResource ThemeBorder}" BorderThickness="1" Padding="12">
         <StackPanel>
-            <TextBlock Text="Claude quota" Foreground="White" FontSize="12.5" FontWeight="Medium" Margin="0,0,0,8"/>
+            <TextBlock Text="Claude quota" FontSize="12.5" FontWeight="Medium" Margin="0,0,0,8"/>
 
-            <TextBlock x:Name="SessionLabel" Foreground="#C7C7C7" FontSize="11.5" Margin="0,0,0,2"/>
-            <Border Height="6" Width="216" Background="#1FFFFFFF" CornerRadius="3" Margin="0,0,0,2" HorizontalAlignment="Left">
+            <TextBlock x:Name="SessionLabel" FontSize="11.5" Margin="0,0,0,2"/>
+            <Border Height="6" Width="216" Background="{StaticResource ThemeTrack}" CornerRadius="3"
+                    Margin="0,0,0,2" HorizontalAlignment="Left">
                 <Border x:Name="SessionBar" Height="6" CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
             </Border>
-            <TextBlock x:Name="SessionReset" Foreground="#8A8A8A" FontSize="11" Margin="0,0,0,10"/>
+            <TextBlock x:Name="SessionReset" Foreground="{StaticResource ThemeTextSecondary}"
+                       FontSize="11" Margin="0,0,0,10"/>
 
-            <TextBlock x:Name="WeekLabel" Foreground="#C7C7C7" FontSize="11.5" Margin="0,0,0,2"/>
-            <Border Height="6" Width="216" Background="#1FFFFFFF" CornerRadius="3" Margin="0,0,0,2" HorizontalAlignment="Left">
+            <TextBlock x:Name="WeekLabel" FontSize="11.5" Margin="0,0,0,2"/>
+            <Border Height="6" Width="216" Background="{StaticResource ThemeTrack}" CornerRadius="3"
+                    Margin="0,0,0,2" HorizontalAlignment="Left">
                 <Border x:Name="WeekBar" Height="6" CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
             </Border>
-            <TextBlock x:Name="WeekReset" Foreground="#8A8A8A" FontSize="11" Margin="0,0,0,10"/>
+            <TextBlock x:Name="WeekReset" Foreground="{StaticResource ThemeTextSecondary}"
+                       FontSize="11" Margin="0,0,0,10"/>
 
-            <TextBlock x:Name="UpdatedLabel" Foreground="#6B7280" FontSize="10.5" Margin="0,0,0,8"/>
+            <TextBlock x:Name="UpdatedLabel" Foreground="{StaticResource ThemeTextMuted}"
+                       FontSize="10.5" Margin="0,0,0,8"/>
 
-            <Button Content="Open Claude Code" Click="OpenClaudeCode_Click" Height="28"
-                    Background="#3A3A3A" Foreground="#E8E8E8" BorderBrush="#24FFFFFF"/>
+            <Button Content="Open Claude Code" Click="OpenClaudeCode_Click" Height="28"/>
         </StackPanel>
     </Border>
 </Window>
